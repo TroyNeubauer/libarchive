@@ -98,7 +98,27 @@ archive_random(void *buf, size_t nbytes)
 #endif
 }
 
-#if !defined(HAVE_ARC4RANDOM_BUF) && (!defined(_WIN32) || defined(__CYGWIN__))
+#if defined(__EMSCRIPTEN__)
+
+#include <emscripten/emscripten.h>
+
+EM_JS(u_char, js_gen_urandom_value, (), {
+	var buf = new Int8Array(1);
+	cryptoObj.getRandomValues(buf);
+	return buf[0];
+});
+
+
+static void
+arc4random_buf(void* _buf, size_t n)
+{
+	u_char* buf = (u_char*)_buf;
+	for (int i = 0; i < n; i++)
+		buf[n] = js_gen_urandom_value();
+	
+}
+
+#elif !defined(HAVE_ARC4RANDOM_BUF) && (!defined(_WIN32) || defined(__CYGWIN__))
 
 /*	$OpenBSD: arc4random.c,v 1.24 2013/06/11 16:59:50 deraadt Exp $	*/
 /*
